@@ -53,7 +53,7 @@ app.use('/api/announcements', require('./routes/announcements'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }));
 
 // ── Serve React build in production ──────────────────────────────────────────
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' && process.env.SERVE_FRONTEND === 'true') {
   const clientBuild = path.join(__dirname, '..', 'frontend', 'dist');
   app.use(express.static(clientBuild));
   app.get('*', (req, res) => {
