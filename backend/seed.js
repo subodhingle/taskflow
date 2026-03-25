@@ -1,177 +1,103 @@
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 dotenv.config();
 
-const User = require('./models/User');
-const Task = require('./models/Task');
-const Meeting = require('./models/Meeting');
-const Announcement = require('./models/Announcement');
-const Notification = require('./models/Notification');
+const pool = require('./db');
 
 async function seed() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('Connected to MongoDB');
+  console.log('Seeding database...');
 
   // Clear existing data
-  await Promise.all([
-    User.deleteMany(),
-    Task.deleteMany(),
-    Meeting.deleteMany(),
-    Announcement.deleteMany(),
-    Notification.deleteMany(),
-  ]);
+  await pool.query(`
+    TRUNCATE announcements, notifications, meeting_participants, meetings,
+             task_assignees, tasks, users RESTART IDENTITY CASCADE
+  `);
 
-  // Create HR admin
-  const hr = await User.create({
-    name: 'Sarah Johnson',
-    email: 'hr@company.com',
-    password: 'password123',
-    role: 'hr',
-    department: 'Human Resources',
-    position: 'HR Manager'
-  });
+  const hash = await bcrypt.hash('password123', 12);
 
-  // Create employees
-  const emp1 = await User.create({
-    name: 'Alex Chen',
-    email: 'alex@company.com',
-    password: 'password123',
-    role: 'employee',
-    department: 'Engineering',
-    position: 'Frontend Developer'
-  });
+  // Create users
+  const { rows: [hr] } = await pool.query(
+    `INSERT INTO users (name,email,password,role,department,position) VALUES ($1,$2,$3,'hr',$4,$5) RETURNING id`,
+    ['Sarah Johnson', 'hr@company.com', hash, 'Human Resources', 'HR Manager']
+  );
+  const { rows: [emp1] } = await pool.query(
+    `INSERT INTO users (name,email,password,role,department,position) VALUES ($1,$2,$3,'employee',$4,$5) RETURNING id`,
+    ['Alex Chen', 'alex@company.com', hash, 'Engineering', 'Frontend Developer']
+  );
+  const { rows: [emp2] } = await pool.query(
+    `INSERT INTO users (name,email,password,role,department,position) VALUES ($1,$2,$3,'employee',$4,$5) RETURNING id`,
+    ['Maria Garcia', 'maria@company.com', hash, 'Engineering', 'Backend Developer']
+  );
+  const { rows: [emp3] } = await pool.query(
+    `INSERT INTO users (name,email,password,role,department,position) VALUES ($1,$2,$3,'employee',$4,$5) RETURNING id`,
+    ['James Wilson', 'james@company.com', hash, 'Design', 'UI/UX Designer']
+  );
 
-  const emp2 = await User.create({
-    name: 'Maria Garcia',
-    email: 'maria@company.com',
-    password: 'password123',
-    role: 'employee',
-    department: 'Engineering',
-    position: 'Backend Developer'
-  });
-
-  const emp3 = await User.create({
-    name: 'James Wilson',
-    email: 'james@company.com',
-    password: 'password123',
-    role: 'employee',
-    department: 'Design',
-    position: 'UI/UX Designer'
-  });
+  const now = new Date();
+  const day = 24 * 60 * 60 * 1000;
 
   // Create tasks
-  const now = new Date();
-  await Task.create([
-    {
-      title: 'Build Login Page',
-      description: 'Create responsive login page with form validation',
-      assignedTo: [emp1._id],
-      createdBy: hr._id,
-      priority: 'high',
-      status: 'completed',
-      deadline: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
-    },
-    {
-      title: 'Design Dashboard UI',
-      description: 'Create wireframes and mockups for the main dashboard',
-      assignedTo: [emp3._id],
-      createdBy: hr._id,
-      priority: 'high',
-      status: 'in-progress',
-      deadline: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-    },
-    {
-      title: 'API Integration',
-      description: 'Integrate REST APIs with the frontend application',
-      assignedTo: [emp1._id, emp2._id],
-      createdBy: hr._id,
-      priority: 'medium',
-      status: 'in-progress',
-      deadline: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)
-    },
-    {
-      title: 'Database Schema Design',
-      description: 'Design and implement MongoDB schemas for all entities',
-      assignedTo: [emp2._id],
-      createdBy: hr._id,
-      priority: 'high',
-      status: 'completed',
-      deadline: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
-    },
-    {
-      title: 'Write Unit Tests',
-      description: 'Write unit tests for all API endpoints',
-      assignedTo: [emp2._id],
-      createdBy: hr._id,
-      priority: 'medium',
-      status: 'pending',
-      deadline: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-    },
-    {
-      title: 'Mobile Responsive Design',
-      description: 'Ensure all pages are fully responsive on mobile devices',
-      assignedTo: [emp3._id],
-      createdBy: hr._id,
-      priority: 'low',
-      status: 'pending',
-      deadline: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)
-    }
-  ]);
+  const tasks = [
+    ['Build Login Page', 'Create responsive login page with form validation', 'high', 'completed', new Date(now - 2 * day)],
+    ['Design Dashboard UI', 'Create wireframes and mockups for the main dashboard', 'high', 'in-progress', new Date(now + 3 * day)],
+    ['API Integration', 'Integrate REST APIs with the frontend application', 'medium', 'in-progress', new Date(now + 5 * day)],
+    ['Database Schema Design', 'Design and implement schemas for all entities', 'high', 'completed', new Date(now - 5 * day)],
+    ['Write Unit Tests', 'Write unit tests for all API endpoints', 'medium', 'pending', new Date(now + 7 * day)],
+    ['Mobile Responsive Design', 'Ensure all pages are fully responsive on mobile', 'low', 'pending', new Date(now - 1 * day)],
+  ];
+
+  const taskIds = [];
+  for (const [title, description, priority, status, deadline] of tasks) {
+    const { rows: [t] } = await pool.query(
+      `INSERT INTO tasks (title,description,created_by,priority,status,deadline) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+      [title, description, hr.id, priority, status, deadline]
+    );
+    taskIds.push(t.id);
+  }
+
+  // Assign tasks
+  const assignees = [
+    [taskIds[0], [emp1.id]],
+    [taskIds[1], [emp3.id]],
+    [taskIds[2], [emp1.id, emp2.id]],
+    [taskIds[3], [emp2.id]],
+    [taskIds[4], [emp2.id]],
+    [taskIds[5], [emp3.id]],
+  ];
+  for (const [taskId, users] of assignees)
+    for (const userId of users)
+      await pool.query('INSERT INTO task_assignees (task_id,user_id) VALUES ($1,$2)', [taskId, userId]);
 
   // Create meetings
-  await Meeting.create([
-    {
-      title: 'Sprint Planning',
-      participants: [emp1._id, emp2._id, emp3._id],
-      date: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000),
-      time: '10:00',
-      endTime: '11:00',
-      link: 'https://meet.google.com/abc-defg-hij',
-      agenda: 'Plan tasks for the upcoming sprint, assign story points',
-      createdBy: hr._id
-    },
-    {
-      title: 'Design Review',
-      participants: [emp3._id],
-      date: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
-      time: '14:00',
-      endTime: '15:00',
-      link: 'https://zoom.us/j/123456789',
-      agenda: 'Review dashboard mockups and gather feedback',
-      createdBy: hr._id
-    },
-    {
-      title: 'Team Standup',
-      participants: [emp1._id, emp2._id, emp3._id],
-      date: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
-      time: '09:00',
-      endTime: '09:30',
-      link: 'https://meet.google.com/xyz-uvwx-yz',
-      agenda: 'Daily standup: what did you do, what will you do, blockers',
-      createdBy: hr._id
-    }
-  ]);
+  const meetings = [
+    ['Sprint Planning', new Date(now + 1 * day), '10:00', '11:00', 'https://meet.google.com/abc-defg-hij', 'Plan tasks for the upcoming sprint', [emp1.id, emp2.id, emp3.id]],
+    ['Design Review', new Date(now + 2 * day), '14:00', '15:00', 'https://zoom.us/j/123456789', 'Review dashboard mockups', [emp3.id]],
+    ['Team Standup', new Date(now + 3 * day), '09:00', '09:30', 'https://meet.google.com/xyz-uvwx-yz', 'Daily standup', [emp1.id, emp2.id, emp3.id]],
+  ];
+
+  for (const [title, date, time, endTime, link, agenda, participants] of meetings) {
+    const { rows: [m] } = await pool.query(
+      `INSERT INTO meetings (title,date,time,end_time,link,agenda,created_by) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+      [title, date, time, endTime, link, agenda, hr.id]
+    );
+    for (const userId of participants)
+      await pool.query('INSERT INTO meeting_participants (meeting_id,user_id) VALUES ($1,$2)', [m.id, userId]);
+  }
 
   // Create announcements
-  await Announcement.create([
-    {
-      title: 'Q2 Performance Reviews',
-      content: 'Q2 performance reviews will begin next week. Please prepare your self-assessment forms.',
-      createdBy: hr._id,
-      priority: 'urgent'
-    },
-    {
-      title: 'New Office Policy',
-      content: 'Starting next month, we will have flexible working hours. Core hours are 10am-3pm.',
-      createdBy: hr._id,
-      priority: 'normal'
-    }
-  ]);
+  await pool.query(
+    `INSERT INTO announcements (title,content,created_by,priority) VALUES ($1,$2,$3,'urgent')`,
+    ['Q2 Performance Reviews', 'Q2 performance reviews will begin next week. Please prepare your self-assessment forms.', hr.id]
+  );
+  await pool.query(
+    `INSERT INTO announcements (title,content,created_by,priority) VALUES ($1,$2,$3,'normal')`,
+    ['New Office Policy', 'Starting next month, we will have flexible working hours. Core hours are 10am-3pm.', hr.id]
+  );
 
-  console.log('✅ Seed data created successfully!');
-  console.log('HR Login: hr@company.com / password123');
+  console.log('✅ Seed data created!');
+  console.log('HR Login:       hr@company.com / password123');
   console.log('Employee Login: alex@company.com / password123');
+  await pool.end();
   process.exit(0);
 }
 

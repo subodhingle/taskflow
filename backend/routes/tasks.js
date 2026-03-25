@@ -1,35 +1,48 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
-const Task = require('../models/Task');
-const Notification = require('../models/Notification');
+const pool = require('../db');
 const { protect, hrOnly } = require('../middleware/auth');
+
+const populateTask = async (taskId) => {
+  const { rows } = await pool.query(`
+    SELECT t.*,
+      COALESCE(json_agg(DISTINCT jsonb_build_object('id',u.id,'name',u.name,'email',u.email)) FILTER (WHERE u.id IS NOT NULL), '[]') AS "assignedTo",
+      jsonb_build_object('id',cb.id,'name',cb.name,'email',cb.email) AS "createdBy"
+    FROM tasks t
+    LEFT JOIN task_assignees ta ON ta.task_id = t.id
+    LEFT JOIN users u ON u.id = ta.user_id
+    LEFT JOIN users cb ON cb.id = t.created_by
+    WHERE t.id = $1
+    GROUP BY t.id, cb.id, cb.name, cb.email
+  `, [taskId]);
+  return rows[0];
+};
 
 // POST /api/tasks
 router.post('/', protect, hrOnly, async (req, res) => {
   try {
     const { title, description, assignedTo, priority, deadline, tags } = req.body;
-
     if (!title || !deadline) return res.status(400).json({ message: 'Title and deadline are required' });
 
-    const task = await Task.create({
-      title, description, assignedTo: assignedTo || [], priority, deadline, tags: tags || [],
-      createdBy: req.user._id,
-    });
+    const { rows } = await pool.query(
+      `INSERT INTO tasks (title,description,created_by,priority,deadline,tags)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+      [title, description || '', req.user.id, priority || 'medium', deadline, tags || []]
+    );
+    const taskId = rows[0].id;
 
-    const io = req.app.get('io');
-    for (const userId of (assignedTo || [])) {
-      const notif = await Notification.create({
-        userId,
-        message: `New task assigned to you: "${title}"`,
-        type: 'task',
-      });
-      io.to(userId.toString()).emit('notification', notif);
+    if (assignedTo?.length) {
+      for (const userId of assignedTo) {
+        await pool.query('INSERT INTO task_assignees (task_id,user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [taskId, userId]);
+        const { rows: [notif] } = await pool.query(
+          `INSERT INTO notifications (user_id,message,type) VALUES ($1,$2,'task') RETURNING *`,
+          [userId, `New task assigned to you: "${title}"`]
+        );
+        req.app.get('io').to(userId).emit('notification', notif);
+      }
     }
 
-    // Re-fetch with populate (avoid chaining populate on saved doc)
-    const populated = await Task.findById(task._id).populate('assignedTo createdBy', 'name email');
-    res.status(201).json(populated);
+    res.status(201).json(await populateTask(taskId));
   } catch (err) {
     console.error('POST /tasks error:', err);
     res.status(500).json({ message: err.message });
@@ -39,11 +52,20 @@ router.post('/', protect, hrOnly, async (req, res) => {
 // GET /api/tasks
 router.get('/', protect, async (req, res) => {
   try {
-    const filter = req.user.role === 'hr' ? {} : { assignedTo: req.user._id };
-    const tasks = await Task.find(filter)
-      .populate('assignedTo createdBy', 'name email')
-      .sort({ createdAt: -1 });
-    res.json(tasks);
+    const isHR = req.user.role === 'hr';
+    const { rows } = await pool.query(`
+      SELECT t.*,
+        COALESCE(json_agg(DISTINCT jsonb_build_object('id',u.id,'name',u.name,'email',u.email)) FILTER (WHERE u.id IS NOT NULL), '[]') AS "assignedTo",
+        jsonb_build_object('id',cb.id,'name',cb.name,'email',cb.email) AS "createdBy"
+      FROM tasks t
+      LEFT JOIN task_assignees ta ON ta.task_id = t.id
+      LEFT JOIN users u ON u.id = ta.user_id
+      LEFT JOIN users cb ON cb.id = t.created_by
+      ${isHR ? '' : 'WHERE ta.user_id = $1'}
+      GROUP BY t.id, cb.id, cb.name, cb.email
+      ORDER BY t.created_at DESC
+    `, isHR ? [] : [req.user.id]);
+    res.json(rows);
   } catch (err) {
     console.error('GET /tasks error:', err);
     res.status(500).json({ message: err.message });
@@ -53,29 +75,24 @@ router.get('/', protect, async (req, res) => {
 // PUT /api/tasks/:id
 router.put('/:id', protect, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id))
-      return res.status(400).json({ message: 'Invalid task ID' });
-
-    const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-
+    const { id } = req.params;
     if (req.user.role === 'employee') {
-      // Employees can only update status
-      if (req.body.status) task.status = req.body.status;
+      await pool.query('UPDATE tasks SET status=$1, updated_at=NOW() WHERE id=$2', [req.body.status, id]);
     } else {
       const { title, description, assignedTo, priority, status, deadline, tags } = req.body;
-      if (title !== undefined) task.title = title;
-      if (description !== undefined) task.description = description;
-      if (assignedTo !== undefined) task.assignedTo = assignedTo;
-      if (priority !== undefined) task.priority = priority;
-      if (status !== undefined) task.status = status;
-      if (deadline !== undefined) task.deadline = deadline;
-      if (tags !== undefined) task.tags = tags;
+      await pool.query(
+        `UPDATE tasks SET title=COALESCE($1,title), description=COALESCE($2,description),
+         priority=COALESCE($3,priority), status=COALESCE($4,status),
+         deadline=COALESCE($5,deadline), tags=COALESCE($6,tags), updated_at=NOW() WHERE id=$7`,
+        [title, description, priority, status, deadline, tags, id]
+      );
+      if (assignedTo) {
+        await pool.query('DELETE FROM task_assignees WHERE task_id=$1', [id]);
+        for (const userId of assignedTo)
+          await pool.query('INSERT INTO task_assignees (task_id,user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [id, userId]);
+      }
     }
-
-    await task.save();
-    const populated = await Task.findById(task._id).populate('assignedTo createdBy', 'name email');
-    res.json(populated);
+    res.json(await populateTask(id));
   } catch (err) {
     console.error('PUT /tasks/:id error:', err);
     res.status(500).json({ message: err.message });
@@ -85,13 +102,9 @@ router.put('/:id', protect, async (req, res) => {
 // DELETE /api/tasks/:id
 router.delete('/:id', protect, hrOnly, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id))
-      return res.status(400).json({ message: 'Invalid task ID' });
-    await Task.findByIdAndDelete(req.params.id);
+    await pool.query('DELETE FROM tasks WHERE id=$1', [req.params.id]);
     res.json({ message: 'Task deleted' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 module.exports = router;

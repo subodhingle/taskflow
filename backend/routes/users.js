@@ -1,79 +1,81 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const pool = require('../db');
 const { protect, hrOnly } = require('../middleware/auth');
 
-// GET /api/users - HR only
+const SAFE = 'id,name,email,role,department,position,avatar,phone,join_date,created_at';
+
+// GET /api/users
 router.get('/', protect, hrOnly, async (req, res) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    const { rows } = await pool.query(`SELECT ${SAFE} FROM users ORDER BY created_at DESC`);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// GET /api/users/employees - HR only
+// GET /api/users/employees
 router.get('/employees', protect, hrOnly, async (req, res) => {
   try {
-    const users = await User.find({ role: 'employee' }).select('-password');
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    const { rows } = await pool.query(`SELECT ${SAFE} FROM users WHERE role='employee'`);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 // GET /api/users/me
-router.get('/me', protect, async (req, res) => {
-  res.json(req.user);
-});
+router.get('/me', protect, (req, res) => res.json(req.user));
 
-// PUT /api/users/me - any logged-in user updates own profile
+// PUT /api/users/me
 router.put('/me', protect, async (req, res) => {
   try {
-    const allowed = ['name', 'department', 'position', 'phone'];
-    const updates = {};
-    allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
-    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    const { name, department, position, phone } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE users SET name=COALESCE($1,name), department=COALESCE($2,department),
+       position=COALESCE($3,position), phone=COALESCE($4,phone), updated_at=NOW()
+       WHERE id=$5 RETURNING ${SAFE}`,
+      [name, department, position, phone, req.user.id]
+    );
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// POST /api/users - HR creates employee
+// POST /api/users
 router.post('/', protect, hrOnly, async (req, res) => {
   try {
     const { name, email, password, role, department, position, phone } = req.body;
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ message: 'Email already registered' });
-    const user = await User.create({ name, email, password: password || 'Password123', role, department, position, phone });
-    res.status(201).json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
+    if (exists.rows[0]) return res.status(400).json({ message: 'Email already registered' });
+    const hashed = await bcrypt.hash(password || 'Password123', 12);
+    const { rows } = await pool.query(
+      `INSERT INTO users (name,email,password,role,department,position,phone)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING ${SAFE}`,
+      [name, email.toLowerCase(), hashed, role || 'employee', department || '', position || '', phone || '']
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// PUT /api/users/:id - HR only
+// PUT /api/users/:id
 router.put('/:id', protect, hrOnly, async (req, res) => {
   try {
-    const { password, ...rest } = req.body;
-    const user = await User.findByIdAndUpdate(req.params.id, rest, { new: true }).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    const { name, department, position, phone, role } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE users SET name=COALESCE($1,name), department=COALESCE($2,department),
+       position=COALESCE($3,position), phone=COALESCE($4,phone), role=COALESCE($5,role), updated_at=NOW()
+       WHERE id=$6 RETURNING ${SAFE}`,
+      [name, department, position, phone, role, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ message: 'User not found' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// DELETE /api/users/:id - HR only
+// DELETE /api/users/:id
 router.delete('/:id', protect, hrOnly, async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.params.id);
+    await pool.query('DELETE FROM users WHERE id=$1', [req.params.id]);
     res.json({ message: 'User deleted' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 module.exports = router;
