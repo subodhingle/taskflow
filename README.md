@@ -3,119 +3,109 @@
 Production-ready full-stack SaaS dashboard with Employee and HR/Admin roles.
 
 ## Stack
-- Frontend: React 19 + Vite + Tailwind CSS + Recharts + Socket.io-client
+- Frontend: React 19 + Vite + Tailwind CSS + Recharts + Three.js + Socket.io-client
 - Backend: Node.js + Express + MongoDB + JWT + Socket.io
 
 ---
 
 ## Run Locally
 
-### Requirements
-- Node.js >= 18
-- MongoDB running on localhost:27017
-
 ```bash
-# 1. Install all dependencies
+# Install all dependencies
 npm run install:all
 
-# 2. Seed the database (first time only)
+# Seed the database (first time only)
 npm run seed
 
-# 3. Start backend  (terminal 1)
-npm run dev:backend
+# Terminal 1 — backend
+npm run dev:backend     # http://localhost:5000
 
-# 4. Start frontend (terminal 2)
-npm run dev:frontend
+# Terminal 2 — frontend
+npm run dev:frontend    # http://localhost:3000
 ```
-
-Open http://localhost:3000
 
 ### Demo Logins
 | Role     | Email              | Password    |
 |----------|--------------------|-------------|
 | HR Admin | hr@company.com     | password123 |
 | Employee | alex@company.com   | password123 |
-| Employee | maria@company.com  | password123 |
-| Employee | james@company.com  | password123 |
 
 ---
 
-## Deploy to Render + Vercel (Recommended)
+## Deploy — Full Stack
 
-### Step 1 — MongoDB Atlas
-1. Go to https://cloud.mongodb.com → create free cluster
-2. Database Access → add user with password
-3. Network Access → allow `0.0.0.0/0`
-4. Connect → copy the connection string
-
-### Step 2 — Deploy Backend to Render
-1. Push this repo to GitHub
-2. New Web Service → connect repo
-3. Root directory: `backend`
-4. Build command: `npm install`
-5. Start command: `npm start`
-6. Add environment variables:
+### STEP 1 — MongoDB Atlas (Database)
+1. Go to https://cloud.mongodb.com → create free M0 cluster
+2. Database Access → Add user → username + password
+3. Network Access → Add IP → `0.0.0.0/0` (allow all)
+4. Connect → Drivers → copy connection string:
    ```
-   MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/taskdashboard
-   JWT_SECRET=<random 32+ char string>
-   NODE_ENV=production
-   CLIENT_URL=https://your-app.vercel.app
-   PORT=5000
+   mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/taskdashboard?retryWrites=true&w=majority
    ```
-7. Deploy → copy the service URL (e.g. `https://taskflow-api.onrender.com`)
-
-### Step 3 — Deploy Frontend to Vercel
-1. New Project → import repo
-2. **Root directory: leave as `/` (root)** — `vercel.json` handles everything
-3. Vercel will auto-detect `vercel.json` and use:
-   - Build: `cd frontend && npm install && npm run build`
-   - Output: `frontend/dist`
-4. Add environment variables in Vercel dashboard → Settings → Environment Variables:
-   ```
-   VITE_API_URL    = https://your-backend.onrender.com/api
-   VITE_SOCKET_URL = https://your-backend.onrender.com
-   ```
-   Use the variable names exactly: `vite_api_url` and `vite_socket_url` (lowercase, Vercel secret names)
-5. Deploy → Done
-
-### Step 4 — Seed production database
-```bash
-cd backend
-# Temporarily set MONGO_URI to your Atlas URI in .env
-node seed.js
-```
 
 ---
 
-## Single-Server Deploy (Backend serves Frontend)
+### STEP 2 — Backend on Render (Free)
+1. Go to https://render.com → New → Web Service
+2. Connect your GitHub repo: `subodhingle/taskflow`
+3. Configure:
+   - **Name:** `taskflow-backend`
+   - **Root Directory:** `backend`
+   - **Runtime:** Node
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+4. Add Environment Variables:
+   ```
+   NODE_ENV    = production
+   PORT        = 5000
+   MONGO_URI   = mongodb+srv://user:pass@cluster.mongodb.net/taskdashboard?retryWrites=true&w=majority
+   JWT_SECRET  = any_random_32+_char_string_here
+   CLIENT_URL  = https://taskflow-xyz.vercel.app   ← your Vercel URL (add after step 3)
+   ```
+5. Click **Create Web Service** → wait for deploy
+6. Copy your Render URL: `https://taskflow-backend.onrender.com`
 
-```bash
-# Build frontend
-cd frontend && npm run build
+> After deploy, seed the DB once:
+> Open Render dashboard → your service → Shell tab → run: `node seed.js`
 
-# Set in backend/.env:
-# NODE_ENV=production
-# CLIENT_URL=https://your-domain.com
+---
 
-# Start backend (serves /dist automatically)
-cd backend && npm start
-```
+### STEP 3 — Frontend on Vercel (Free)
+1. Go to https://vercel.com → New Project → Import `subodhingle/taskflow`
+2. **Leave Root Directory as `/`** — `vercel.json` handles everything
+3. Add Environment Variables:
+   ```
+   VITE_API_URL    = https://taskflow-backend.onrender.com/api
+   VITE_SOCKET_URL = https://taskflow-backend.onrender.com
+   ```
+4. Click **Deploy**
+5. Copy your Vercel URL: `https://taskflow-xyz.vercel.app`
+
+---
+
+### STEP 4 — Connect Frontend ↔ Backend
+1. Go back to **Render** → your backend service → Environment
+2. Update `CLIENT_URL` to your Vercel URL:
+   ```
+   CLIENT_URL = https://taskflow-xyz.vercel.app
+   ```
+3. Render will auto-redeploy
 
 ---
 
 ## Environment Variables Reference
 
-### backend/.env
-| Variable    | Description                        | Example                          |
-|-------------|------------------------------------|----------------------------------|
-| PORT        | Server port                        | 5000                             |
-| MONGO_URI   | MongoDB connection string          | mongodb+srv://...                |
-| JWT_SECRET  | JWT signing secret (32+ chars)     | my_super_secret_key_here         |
-| NODE_ENV    | Environment                        | production                       |
-| CLIENT_URL  | Frontend URL (CORS)                | https://your-app.vercel.app      |
+### backend/.env (local) / Render (production)
+| Variable   | Example                                              |
+|------------|------------------------------------------------------|
+| PORT       | 5000                                                 |
+| MONGO_URI  | mongodb+srv://user:pass@cluster.mongodb.net/taskdb   |
+| JWT_SECRET | taskflow_super_secret_min_32_chars                   |
+| NODE_ENV   | production                                           |
+| CLIENT_URL | https://taskflow-xyz.vercel.app                      |
 
-### frontend/.env.production
-| Variable        | Description              | Example                                    |
-|-----------------|--------------------------|--------------------------------------------|
-| VITE_API_URL    | Backend API base URL     | https://taskflow-api.onrender.com/api      |
-| VITE_SOCKET_URL | Backend socket URL       | https://taskflow-api.onrender.com          |
+### frontend env (Vercel dashboard)
+| Variable        | Example                                          |
+|-----------------|--------------------------------------------------|
+| VITE_API_URL    | https://taskflow-backend.onrender.com/api        |
+| VITE_SOCKET_URL | https://taskflow-backend.onrender.com            |
