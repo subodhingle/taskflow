@@ -5,6 +5,7 @@ import api from '../../utils/api';
 import StatCard from '../../components/common/StatCard';
 import TaskCard from '../../components/common/TaskCard';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
