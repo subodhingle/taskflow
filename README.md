@@ -66,15 +66,17 @@ Open http://localhost:3000
 
 ### Step 3 — Deploy Frontend to Vercel
 1. New Project → import repo
-2. Root directory: `frontend`
-3. Build command: `npm run build`
-4. Output directory: `dist`
-5. Add environment variables:
+2. **Root directory: leave as `/` (root)** — `vercel.json` handles everything
+3. Vercel will auto-detect `vercel.json` and use:
+   - Build: `cd frontend && npm install && npm run build`
+   - Output: `frontend/dist`
+4. Add environment variables in Vercel dashboard → Settings → Environment Variables:
    ```
-   VITE_API_URL=https://taskflow-api.onrender.com/api
-   VITE_SOCKET_URL=https://taskflow-api.onrender.com
+   VITE_API_URL    = https://your-backend.onrender.com/api
+   VITE_SOCKET_URL = https://your-backend.onrender.com
    ```
-6. Deploy
+   Use the variable names exactly: `vite_api_url` and `vite_socket_url` (lowercase, Vercel secret names)
+5. Deploy → Done
 
 ### Step 4 — Seed production database
 ```bash
