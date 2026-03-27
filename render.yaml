@@ -8,13 +8,19 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
-      - key: MONGO_URI
-        sync: false        # set manually in Render dashboard
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        value: postgres
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
       - key: JWT_SECRET
-        sync: false        # set manually in Render dashboard
+        sync: false
       - key: CLIENT_URL
-        sync: false        # set to your Vercel frontend URL
+        sync: false
     healthCheckPath: /api/health
     autoDeploy: true

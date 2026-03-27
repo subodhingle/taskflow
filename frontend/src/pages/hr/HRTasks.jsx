@@ -31,7 +31,7 @@ export default function HRTasks() {
     setForm({
       title: t.title,
       description: t.description || '',
-      assignedTo: t.assignedTo.map(u => (typeof u === 'object' ? u._id : u)),
+      assignedTo: t.assignedTo.map(u => (typeof u === 'object' ? (u.id || u._id) : u)),
       priority: t.priority,
       deadline: t.deadline ? new Date(t.deadline).toISOString().split('T')[0] : '',
       tags: t.tags?.join(', ') || '',
@@ -45,8 +45,8 @@ export default function HRTasks() {
     try {
       const payload = { ...form, tags: form.tags ? form.tags.split(',').map(s => s.trim()) : [] };
       if (editTask) {
-        const { data } = await api.put(`/tasks/${editTask._id}`, payload);
-        setTasks(prev => prev.map(t => t._id === editTask._id ? data : t));
+        const { data } = await api.put(`/tasks/${editTask.id || editTask._id}`, payload);
+        setTasks(prev => prev.map(t => (t.id || t._id) === (editTask.id || editTask._id) ? data : t));
         toast.success('Task updated');
       } else {
         const { data } = await api.post('/tasks', payload);
@@ -61,7 +61,7 @@ export default function HRTasks() {
   const handleDelete = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
-      setTasks(prev => prev.filter(t => t._id !== id));
+      setTasks(prev => prev.filter(t => (t.id || t._id) !== id));
       setDeleteId(null);
       toast.success('Task deleted');
     } catch { toast.error('Failed to delete'); }
@@ -107,13 +107,13 @@ export default function HRTasks() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(task => (
-            <div key={task._id} className="relative group">
+            <div key={task.id || task._id} className="relative group">
               <TaskCard task={task} showAssignee />
               <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(task)} className="p-1.5 bg-white dark:bg-gray-700 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-600">
                   <Edit2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
                 </button>
-                <button onClick={() => setDeleteId(task._id)} className="p-1.5 bg-white dark:bg-gray-700 rounded-lg shadow hover:bg-red-50 dark:hover:bg-red-900/20">
+                <button onClick={() => setDeleteId(task.id || task._id)} className="p-1.5 bg-white dark:bg-gray-700 rounded-lg shadow hover:bg-red-50 dark:hover:bg-red-900/20">
                   <Trash2 className="w-3.5 h-3.5 text-red-500" />
                 </button>
               </div>
@@ -154,9 +154,9 @@ export default function HRTasks() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign To</label>
             <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 max-h-40 overflow-y-auto space-y-2">
               {employees.map(emp => (
-                <label key={emp._id} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.assignedTo.includes(emp._id)}
-                    onChange={e => setForm({ ...form, assignedTo: e.target.checked ? [...form.assignedTo, emp._id] : form.assignedTo.filter(id => id !== emp._id) })}
+                <label key={emp.id || emp._id} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.assignedTo.includes(emp.id || emp._id)}
+                    onChange={e => { const id = emp.id || emp._id; setForm({ ...form, assignedTo: e.target.checked ? [...form.assignedTo, id] : form.assignedTo.filter(i => i !== id) }); }}
                     className="rounded text-purple-600" />
                   <span className="text-sm text-gray-700 dark:text-gray-300">{emp.name} <span className="text-gray-400">({emp.department || 'No dept'})</span></span>
                 </label>

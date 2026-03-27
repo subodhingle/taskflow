@@ -1,11 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+dotenv.config();
 const http = require('http');
 const { Server } = require('socket.io');
 const pool = require('./db');
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -42,9 +41,6 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.N
 io.on('connection', (socket) => {
   socket.on('join', (userId) => { if (userId) socket.join(userId.toString()); });
 });
-
-// Run migrations then start
-const migrate = require('fs').readFileSync(require('path').join(__dirname, 'migrate.js'), 'utf8');
 
 const start = async () => {
   try {
