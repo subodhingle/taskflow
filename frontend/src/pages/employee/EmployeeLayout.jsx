@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
+import RamaAstraLogo from '../../components/common/RamaAstraLogo';
 import {
   LayoutDashboard, CheckSquare, Video, Bell, User, Package,
   LogOut, Menu, X, Sun, Moon
@@ -41,11 +42,8 @@ export default function EmployeeLayout() {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-gray-700">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-          <LayoutDashboard className="w-4 h-4 text-white" />
-        </div>
-        <span className="font-bold text-gray-800 dark:text-white text-lg">TaskFlow</span>
+      <div className="flex items-center px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-[#0a0a0a]">
+        <RamaAstraLogo height={36} />
       </div>
 
       {/* User info */}

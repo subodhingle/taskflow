@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { LogIn, Mail, Lock, LayoutDashboard, Cpu, Radio, Navigation } from 'lucide-react';
+import RamaAstraLogo from '../../components/common/RamaAstraLogo';
 
 // Lazy-load the heavy 3D scene so the form renders instantly
 const DroneScene = lazy(() => import('../../components/common/DroneScene'));
@@ -68,8 +69,7 @@ export default function Login() {
             <LayoutDashboard className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="text-white font-bold text-lg leading-none">TaskFlow</p>
-            <p className="text-sky-400 text-xs">Aerospace Division</p>
+            <RamaAstraLogo height={36} />
           </div>
         </div>
 
@@ -112,7 +112,7 @@ export default function Login() {
             <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center">
               <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
-            <p className="text-white font-bold text-lg">TaskFlow</p>
+            <RamaAstraLogo height={28} />
           </div>
 
           <h1 className="text-2xl font-bold text-white mb-1">Sign in</h1>

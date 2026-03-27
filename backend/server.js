@@ -93,7 +93,8 @@ const start = async () => {
       );
       CREATE TABLE IF NOT EXISTS inventory (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        drone_name TEXT NOT NULL,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL CHECK (category IN ('Motors','ESC','GPS','FC','Propeller','Frame','Cells','Battery','Remote','Goggles')),
         model TEXT NOT NULL,
         serial_number TEXT UNIQUE NOT NULL,
         status TEXT DEFAULT 'available' CHECK (status IN ('available','in-use','maintenance','retired')),

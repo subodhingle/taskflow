@@ -10,7 +10,7 @@ router.get('/', protect, async (req, res) => {
       SELECT i.*, u.name AS created_by_name
       FROM inventory i
       LEFT JOIN users u ON u.id = i.created_by
-      ORDER BY i.created_at DESC
+      ORDER BY i.category, i.created_at DESC
     `);
     res.json(rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -19,15 +19,15 @@ router.get('/', protect, async (req, res) => {
 // POST /api/inventory
 router.post('/', protect, hrOnly, async (req, res) => {
   try {
-    const { drone_name, model, serial_number, status, quantity, location, purchase_date, notes } = req.body;
-    if (!drone_name || !model || !serial_number) 
-      return res.status(400).json({ message: 'Drone name, model, and serial number are required' });
+    const { name, category, model, serial_number, status, quantity, location, purchase_date, notes } = req.body;
+    if (!name || !category || !model || !serial_number)
+      return res.status(400).json({ message: 'Name, category, model and serial number are required' });
 
     const { rows } = await pool.query(
-      `INSERT INTO inventory (drone_name, model, serial_number, status, quantity, location, purchase_date, notes, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO inventory (name, category, model, serial_number, status, quantity, location, purchase_date, notes, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING *, (SELECT name FROM users WHERE id = created_by) AS created_by_name`,
-      [drone_name, model, serial_number, status || 'available', quantity || 1, location || '', purchase_date || null, notes || '', req.user.id]
+      [name, category, model, serial_number, status || 'available', quantity || 1, location || '', purchase_date || null, notes || '', req.user.id]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -39,21 +39,17 @@ router.post('/', protect, hrOnly, async (req, res) => {
 // PUT /api/inventory/:id
 router.put('/:id', protect, hrOnly, async (req, res) => {
   try {
-    const { drone_name, model, serial_number, status, quantity, location, purchase_date, notes } = req.body;
+    const { name, category, model, serial_number, status, quantity, location, purchase_date, notes } = req.body;
     const { rows } = await pool.query(
-      `UPDATE inventory SET 
-       drone_name = COALESCE($1, drone_name),
-       model = COALESCE($2, model),
-       serial_number = COALESCE($3, serial_number),
-       status = COALESCE($4, status),
-       quantity = COALESCE($5, quantity),
-       location = COALESCE($6, location),
-       purchase_date = COALESCE($7, purchase_date),
-       notes = COALESCE($8, notes),
-       updated_at = NOW()
-       WHERE id = $9
+      `UPDATE inventory SET
+       name = COALESCE($1, name), category = COALESCE($2, category),
+       model = COALESCE($3, model), serial_number = COALESCE($4, serial_number),
+       status = COALESCE($5, status), quantity = COALESCE($6, quantity),
+       location = COALESCE($7, location), purchase_date = COALESCE($8, purchase_date),
+       notes = COALESCE($9, notes), updated_at = NOW()
+       WHERE id = $10
        RETURNING *, (SELECT name FROM users WHERE id = created_by) AS created_by_name`,
-      [drone_name, model, serial_number, status, quantity, location, purchase_date, notes, req.params.id]
+      [name, category, model, serial_number, status, quantity, location, purchase_date, notes, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ message: 'Item not found' });
     res.json(rows[0]);

@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { io } from 'socket.io-client';
+import RamaAstraLogo from '../../components/common/RamaAstraLogo';
 import {
   LayoutDashboard, Users, CheckSquare, Video, BarChart2,
   Megaphone, Package, LogOut, Menu, Sun, Moon
@@ -35,14 +36,8 @@ export default function HRLayout() {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-gray-700">
-        <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-          <LayoutDashboard className="w-4 h-4 text-white" />
-        </div>
-        <div>
-          <span className="font-bold text-gray-800 dark:text-white text-lg">TaskFlow</span>
-          <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">HR</span>
-        </div>
+      <div className="flex items-center px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-[#0a0a0a]">
+        <RamaAstraLogo height={36} />
       </div>
 
       <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-700">

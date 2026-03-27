@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Zap, Users } from 'lucide-react';
+import RamaAstraLogo from '../components/common/RamaAstraLogo';
 
 export default function Landing() {
   const [loaded, setLoaded] = useState(false);
@@ -38,11 +39,7 @@ export default function Landing() {
             loaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
           }`}
         >
-          <img
-            src="/ramaastra-logo.png"
-            alt="RamaAstra Aerospace & Defence"
-            className="w-full max-w-2xl h-auto mb-12 drop-shadow-2xl animate-float"
-          />
+          <RamaAstraLogo height={80} className="animate-float" />
         </div>
 
         {/* Tagline */}
