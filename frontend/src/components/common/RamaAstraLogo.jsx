@@ -1,76 +1,73 @@
 import React from 'react';
 
-export default function RamaAstraLogo({ className = '', height = 40 }) {
+export default function RamaAstraLogo({ className = '', height = 48 }) {
+  const width = height * 2.8;
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 320 100"
+      viewBox="0 0 280 100"
       height={height}
+      width={width}
       className={className}
       aria-label="RamaAstra Aerospace & Defence"
     >
-      {/* Star shape */}
-      <g>
-        {/* Star outline */}
-        <polygon
-          points="38,8 44,28 64,28 48,40 54,60 38,48 22,60 28,40 12,28 32,28"
-          fill="none"
-          stroke="white"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-        />
-        {/* Inner star fill */}
-        <polygon
-          points="38,8 44,28 64,28 48,40 54,60 38,48 22,60 28,40 12,28 32,28"
-          fill="#0a0a0a"
-          stroke="white"
-          strokeWidth="1"
-        />
-        {/* Swoosh tail */}
-        <path
-          d="M 12,55 Q 0,65 5,72 Q 20,62 38,48"
-          fill="none"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 5,72 L 55,68"
-          fill="none"
-          stroke="white"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </g>
-
-      {/* RamaAstra text */}
-      <text
-        x="72"
-        y="46"
-        fontFamily="Arial, sans-serif"
-        fontWeight="bold"
-        fontSize="28"
+      {/* ── Star + swoosh ── */}
+      {/* Star body — white filled with black cutout center */}
+      <polygon
+        points="44,4 50,26 72,26 55,39 61,61 44,48 27,61 33,39 16,26 38,26"
         fill="white"
-        letterSpacing="0.5"
+      />
+      {/* Black inner cutout to create hollow star effect */}
+      <polygon
+        points="44,12 48,28 62,28 51,36 55,50 44,42 33,50 37,36 26,28 40,28"
+        fill="black"
+      />
+
+      {/* Swoosh tail — bottom left going right */}
+      <path
+        d="M 16,52 Q 4,64 8,70 L 72,64"
+        fill="none"
+        stroke="white"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Second swoosh line (thinner) */}
+      <path
+        d="M 8,70 L 80,66"
+        fill="none"
+        stroke="white"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+
+      {/* ── RamaAstra text ── */}
+      <text
+        x="78"
+        y="44"
+        fontFamily="'Arial Black', 'Arial Bold', Arial, sans-serif"
+        fontWeight="900"
+        fontSize="30"
+        fill="white"
+        letterSpacing="0.3"
       >
         RamaAstra
       </text>
 
-      {/* AEROSPACE & DEFENCE text */}
+      {/* ── AEROSPACE & DEFENCE ── */}
       <text
-        x="73"
-        y="64"
+        x="79"
+        y="62"
         fontFamily="Arial, sans-serif"
-        fontWeight="600"
-        fontSize="13"
-        fill="#4db8ff"
-        letterSpacing="2"
+        fontWeight="700"
+        fontStyle="italic"
+        fontSize="12.5"
+        fill="#38b6ff"
+        letterSpacing="1.8"
       >
         AEROSPACE &amp; DEFENCE
       </text>
-
-      {/* Underline */}
-      <line x1="73" y1="68" x2="290" y2="68" stroke="#4db8ff" strokeWidth="0.8" opacity="0.5" />
     </svg>
   );
 }

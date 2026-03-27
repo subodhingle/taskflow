@@ -2,7 +2,7 @@ import React, { useState, Suspense, lazy } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { LogIn, Mail, Lock, LayoutDashboard, Cpu, Radio, Navigation } from 'lucide-react';
+import { LogIn, Mail, Lock, Cpu, Radio, Navigation } from 'lucide-react';
 import RamaAstraLogo from '../../components/common/RamaAstraLogo';
 
 // Lazy-load the heavy 3D scene so the form renders instantly
@@ -65,12 +65,7 @@ export default function Login() {
 
         {/* Branding top-left */}
         <div className="absolute top-6 left-6 flex items-center gap-2.5 z-10">
-          <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30">
-            <LayoutDashboard className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <RamaAstraLogo height={36} />
-          </div>
+          <RamaAstraLogo height={36} />
         </div>
 
         {/* Headline bottom-left */}
@@ -107,11 +102,8 @@ export default function Login() {
       <div className="flex items-center justify-center lg:w-[440px] xl:w-[480px] shrink-0 p-6 lg:p-12 bg-[#020817]">
         <div className="w-full max-w-sm">
 
-          {/* Mobile logo (hidden on desktop — shown in left panel) */}
-          <div className="flex items-center gap-2.5 mb-8 lg:hidden">
-            <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center">
-              <LayoutDashboard className="w-5 h-5 text-white" />
-            </div>
+          {/* Mobile logo */}
+          <div className="flex items-center mb-8 lg:hidden">
             <RamaAstraLogo height={28} />
           </div>
 

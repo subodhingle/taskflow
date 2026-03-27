@@ -2,7 +2,7 @@ import React, { useState, Suspense, lazy } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { UserPlus, Mail, Lock, User, LayoutDashboard, Building, Briefcase } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Building, Briefcase } from 'lucide-react';
 import RamaAstraLogo from '../../components/common/RamaAstraLogo';
 
 const DroneScene = lazy(() => import('../../components/common/DroneScene'));
@@ -48,12 +48,7 @@ export default function Signup() {
 
         {/* Branding */}
         <div className="absolute top-6 left-6 flex items-center gap-2.5 z-10">
-          <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30">
-            <LayoutDashboard className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <RamaAstraLogo height={36} />
-          </div>
+          <RamaAstraLogo height={36} />
         </div>
 
         {/* Bottom text — desktop only */}
@@ -77,10 +72,7 @@ export default function Signup() {
         <div className="w-full max-w-sm">
 
           {/* Mobile logo */}
-          <div className="flex items-center gap-2.5 mb-6 lg:hidden">
-            <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center">
-              <LayoutDashboard className="w-5 h-5 text-white" />
-            </div>
+          <div className="flex items-center mb-6 lg:hidden">
             <RamaAstraLogo height={28} />
           </div>
 

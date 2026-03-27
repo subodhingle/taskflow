@@ -36,8 +36,8 @@ export default function HRLayout() {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      <div className="flex items-center px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-[#0a0a0a]">
-        <RamaAstraLogo height={36} />
+      <div className="flex items-center px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+        <RamaAstraLogo height={56} />
       </div>
 
       <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-700">
