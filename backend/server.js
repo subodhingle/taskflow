@@ -13,16 +13,7 @@ const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map(o => o.trim())
   : ['http://localhost:3000'];
 
-app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    // Allow all vercel.app and onrender.com origins
-    if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-}));
+app.use(cors({ origin: '*', credentials: false }));
 
 const io = new Server(server, {
   cors: { origin: (origin, cb) => cb(null, true), methods: ['GET', 'POST'], credentials: true },

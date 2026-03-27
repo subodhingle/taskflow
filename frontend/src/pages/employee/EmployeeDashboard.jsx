@@ -37,7 +37,7 @@ export default function EmployeeDashboard() {
   const handleStatusChange = async (taskId, status) => {
     try {
       const { data } = await api.put(`/tasks/${taskId}`, { status });
-      setTasks(prev => prev.map(t => t._id === taskId ? data : t));
+      setTasks(prev => prev.map(t => (t.id || t._id) === taskId ? data : t));
       toast.success('Task updated');
     } catch {
       toast.error('Failed to update task');

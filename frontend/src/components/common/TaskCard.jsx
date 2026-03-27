@@ -46,7 +46,7 @@ export default function TaskCard({ task, onStatusChange, showAssignee = false })
       {onStatusChange && (
         <select
           value={task.status}
-          onChange={e => onStatusChange(task._id, e.target.value)}
+          onChange={e => onStatusChange(task.id || task._id, e.target.value)}
           className="w-full text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option value="pending">Pending</option>

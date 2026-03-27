@@ -76,6 +76,7 @@ router.get('/', protect, async (req, res) => {
 router.put('/:id', protect, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id || id === 'undefined') return res.status(400).json({ message: 'Invalid task ID' });
     if (req.user.role === 'employee') {
       await pool.query('UPDATE tasks SET status=$1, updated_at=NOW() WHERE id=$2', [req.body.status, id]);
     } else {
