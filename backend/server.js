@@ -15,14 +15,17 @@ const allowedOrigins = process.env.CLIENT_URL
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    // Allow all vercel.app and onrender.com origins
+    if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) return cb(null, true);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
 
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ['GET', 'POST'], credentials: true },
+  cors: { origin: (origin, cb) => cb(null, true), methods: ['GET', 'POST'], credentials: true },
 });
 
 app.use(express.json({ limit: '10mb' }));
