@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { io } from 'socket.io-client';
 import {
   LayoutDashboard, Users, CheckSquare, Video, BarChart2,
-  Megaphone, LogOut, Menu, Sun, Moon
+  Megaphone, Package, LogOut, Menu, Sun, Moon
 } from 'lucide-react';
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { to: '/hr/employees', label: 'Employees', icon: Users },
   { to: '/hr/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/hr/meetings', label: 'Meetings', icon: Video },
+  { to: '/hr/inventory', label: 'Inventory', icon: Package },
   { to: '/hr/analytics', label: 'Analytics', icon: BarChart2 },
   { to: '/hr/announcements', label: 'Announcements', icon: Megaphone },
 ];

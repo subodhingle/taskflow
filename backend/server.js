@@ -29,6 +29,7 @@ app.use('/api/tasks',         require('./routes/tasks'));
 app.use('/api/meetings',      require('./routes/meetings'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/inventory',     require('./routes/inventory'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }));
 
@@ -89,6 +90,20 @@ const start = async () => {
         created_by UUID REFERENCES users(id) ON DELETE SET NULL,
         priority TEXT DEFAULT 'normal' CHECK (priority IN ('low','normal','urgent')),
         created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS inventory (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        drone_name TEXT NOT NULL,
+        model TEXT NOT NULL,
+        serial_number TEXT UNIQUE NOT NULL,
+        status TEXT DEFAULT 'available' CHECK (status IN ('available','in-use','maintenance','retired')),
+        quantity INT DEFAULT 1,
+        location TEXT DEFAULT '',
+        purchase_date DATE,
+        notes TEXT DEFAULT '',
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
     console.log('✅ PostgreSQL tables ready');

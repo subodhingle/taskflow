@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext';
 
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
+import Landing from './pages/Landing';
 
 // Employee pages
 import EmployeeLayout from './pages/employee/EmployeeLayout';
@@ -14,6 +15,7 @@ import EmployeeTasks from './pages/employee/EmployeeTasks';
 import EmployeeMeetings from './pages/employee/EmployeeMeetings';
 import EmployeeNotifications from './pages/employee/EmployeeNotifications';
 import EmployeeProfile from './pages/employee/EmployeeProfile';
+import EmployeeInventory from './pages/employee/EmployeeInventory';
 
 // HR pages
 import HRLayout from './pages/hr/HRLayout';
@@ -23,6 +25,7 @@ import HRTasks from './pages/hr/HRTasks';
 import HRMeetings from './pages/hr/HRMeetings';
 import HRAnalytics from './pages/hr/HRAnalytics';
 import HRAnnouncements from './pages/hr/HRAnnouncements';
+import HRInventory from './pages/hr/HRInventory';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -37,6 +40,7 @@ const AppRoutes = () => {
   const { user } = useAuth();
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={!user ? <Login /> : <Navigate to={user.role === 'hr' ? '/hr' : '/employee'} />} />
       <Route path="/signup" element={!user ? <Signup /> : <Navigate to={user.role === 'hr' ? '/hr' : '/employee'} />} />
 
@@ -46,6 +50,7 @@ const AppRoutes = () => {
         <Route path="tasks" element={<EmployeeTasks />} />
         <Route path="meetings" element={<EmployeeMeetings />} />
         <Route path="notifications" element={<EmployeeNotifications />} />
+        <Route path="inventory" element={<EmployeeInventory />} />
         <Route path="profile" element={<EmployeeProfile />} />
       </Route>
 
@@ -57,6 +62,7 @@ const AppRoutes = () => {
         <Route path="meetings" element={<HRMeetings />} />
         <Route path="analytics" element={<HRAnalytics />} />
         <Route path="announcements" element={<HRAnnouncements />} />
+        <Route path="inventory" element={<HRInventory />} />
       </Route>
 
       <Route path="/" element={<Navigate to={user ? (user.role === 'hr' ? '/hr' : '/employee') : '/login'} />} />

@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 import {
-  LayoutDashboard, CheckSquare, Video, Bell, User,
+  LayoutDashboard, CheckSquare, Video, Bell, User, Package,
   LogOut, Menu, X, Sun, Moon
 } from 'lucide-react';
 
@@ -13,6 +13,7 @@ const navItems = [
   { to: '/employee', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/employee/tasks', label: 'My Tasks', icon: CheckSquare },
   { to: '/employee/meetings', label: 'Meetings', icon: Video },
+  { to: '/employee/inventory', label: 'Inventory', icon: Package },
   { to: '/employee/notifications', label: 'Notifications', icon: Bell },
   { to: '/employee/profile', label: 'Profile', icon: User },
 ];
