@@ -35,11 +35,6 @@ export default function Login() {
     }
   };
 
-  const fillDemo = (role) => {
-    if (role === 'hr') setForm({ email: 'hr@company.com',   password: 'password123' });
-    else               setForm({ email: 'alex@company.com', password: 'password123' });
-  };
-
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#020817]">
 
@@ -109,18 +104,6 @@ export default function Login() {
 
           <h1 className="text-2xl font-bold text-white mb-1">Sign in</h1>
           <p className="text-slate-500 text-sm mb-8">Access your mission dashboard</p>
-
-          {/* Demo quick-fill */}
-          <div className="flex gap-2 mb-6">
-            <button onClick={() => fillDemo('hr')}
-              className="flex-1 text-xs py-2 px-3 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors font-medium">
-              Demo HR Admin
-            </button>
-            <button onClick={() => fillDemo('employee')}
-              className="flex-1 text-xs py-2 px-3 bg-sky-500/10 text-sky-400 rounded-lg border border-sky-500/20 hover:bg-sky-500/20 transition-colors font-medium">
-              Demo Employee
-            </button>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}

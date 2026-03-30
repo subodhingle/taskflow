@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const pool = require('../db');
 const { protect, hrOnly } = require('../middleware/auth');
 
@@ -45,7 +46,7 @@ router.post('/', protect, hrOnly, async (req, res) => {
     const { name, email, password, role, department, position, phone } = req.body;
     const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
     if (exists.rows[0]) return res.status(400).json({ message: 'Email already registered' });
-    const hashed = await bcrypt.hash(password || 'Password123', 12);
+    const hashed = await bcrypt.hash(password || crypto.randomBytes(16).toString('hex'), 12);
     const { rows } = await pool.query(
       `INSERT INTO users (name,email,password,role,department,position,phone)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING ${SAFE}`,
