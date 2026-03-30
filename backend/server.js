@@ -1,10 +1,13 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const dotenv = require('dotenv');
 dotenv.config();
 const http = require('http');
 const { Server } = require('socket.io');
 const pool = require('./db');
+const logger = require('./logger');
+const requestLogger = require('./middleware/requestLogger');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,14 +16,40 @@ const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map(o => o.trim())
   : ['http://localhost:3000'];
 
-app.use(cors({ origin: '*', credentials: false }));
+// Security headers
+app.use(helmet());
+
+// Force HTTPS in production
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
+// Request logging
+app.use(requestLogger);
+
+// CORS — restrict to known origins
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // allow server-to-server
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.onrender.com')
+    ) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 
 const io = new Server(server, {
   cors: { origin: (origin, cb) => cb(null, true), methods: ['GET', 'POST'], credentials: true },
 });
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.set('io', io);
 
 app.use('/api/auth',          require('./routes/auth'));
@@ -32,6 +61,24 @@ app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/inventory',     require('./routes/inventory'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }));
+
+// ── Global error handler ──────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  logger.error({
+    event: 'unhandled_error',
+    method: req.method,
+    path: req.path,
+    error: err.message,
+    stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
+  });
+  res.status(err.status || 500).json({ message: 'Internal server error' });
+});
+
+// ── 404 handler ───────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  logger.warn({ event: 'not_found', method: req.method, path: req.path });
+  res.status(404).json({ message: 'Not found' });
+});
 
 io.on('connection', (socket) => {
   socket.on('join', (userId) => { if (userId) socket.join(userId.toString()); });
@@ -109,13 +156,13 @@ const start = async () => {
     `);
     console.log('✅ PostgreSQL tables ready');
   } catch (err) {
-    console.error('❌ DB migration failed:', err.message);
+    logger.error({ event: 'db_migration_failed', error: err.message });
     process.exit(1);
   }
 
   const PORT = process.env.PORT || 5000;
   server.listen(PORT, '0.0.0.0', () =>
-    console.log(`🚀 Server running on port ${PORT} [${process.env.NODE_ENV}]`)
+    logger.info({ event: 'server_started', port: PORT, env: process.env.NODE_ENV })
   );
 };
 

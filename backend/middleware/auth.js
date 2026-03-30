@@ -2,19 +2,36 @@ const jwt = require('jsonwebtoken');
 const pool = require('../db');
 
 const protect = async (req, res, next) => {
-  let token;
-  if (req.headers.authorization?.startsWith('Bearer'))
-    token = req.headers.authorization.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Not authorized, no token' });
-
   try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer '))
+      return res.status(401).json({ message: 'Not authorized, no token' });
+
+    const token = authHeader.split(' ')[1];
+    if (!token)
+      return res.status(401).json({ message: 'Not authorized, no token' });
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { rows } = await pool.query('SELECT id,name,email,role,department,position,avatar,phone,join_date,created_at FROM users WHERE id=$1', [decoded.id]);
-    if (!rows[0]) return res.status(401).json({ message: 'User not found' });
+
+    // Validate decoded payload shape
+    if (!decoded?.id)
+      return res.status(401).json({ message: 'Invalid token payload' });
+
+    const { rows } = await pool.query(
+      'SELECT id,name,email,role,department,position,avatar,phone,join_date,created_at FROM users WHERE id=$1',
+      [decoded.id]
+    );
+    if (!rows[0])
+      return res.status(401).json({ message: 'Not authorized, user not found' });
+
     req.user = rows[0];
     next();
-  } catch {
-    res.status(401).json({ message: 'Not authorized, token failed' });
+  } catch (err) {
+    if (err.name === 'TokenExpiredError')
+      return res.status(401).json({ message: 'Session expired, please log in again' });
+    if (err.name === 'JsonWebTokenError')
+      return res.status(401).json({ message: 'Invalid token' });
+    res.status(401).json({ message: 'Not authorized' });
   }
 };
 

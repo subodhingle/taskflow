@@ -18,17 +18,17 @@ const populateTask = async (taskId) => {
   return rows[0];
 };
 
-// POST /api/tasks
+// POST /api/tasks — HR only
 router.post('/', protect, hrOnly, async (req, res) => {
   try {
     const { title, description, assignedTo, priority, deadline, tags } = req.body;
-    if (!title || !deadline) return res.status(400).json({ message: 'Title and deadline are required' });
+    if (!title?.trim() || !deadline)
+      return res.status(400).json({ message: 'Title and deadline are required' });
 
     const { rows } = await pool.query(
       `INSERT INTO tasks (title,description,created_by,priority,deadline,tags)
        VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-      [title, description || '', req.user.id, priority || 'medium', deadline, tags || []]
-    );
+      [title.trim(), description || '', req.user.id, priority || 'medium', d
     const taskId = rows[0].id;
 
     if (assignedTo?.length) {

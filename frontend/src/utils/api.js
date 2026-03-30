@@ -24,5 +24,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-//2&$|hT+/Vyieo*5]
-//postgresql://postgres://2&$|hT+/Vyieo*5]@db.smlqbiutuekqgqgouajh.supabase.co:5432/postgres
